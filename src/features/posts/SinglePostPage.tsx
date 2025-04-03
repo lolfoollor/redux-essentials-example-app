@@ -1,20 +1,28 @@
 import { useAppSelector } from '@/app/hooks'
 import { Link, useParams } from 'react-router-dom'
 import PostNotFound from './PostNotFound'
-import { selectPostById } from './postsSlice'
 import PostAuthor from './PostAuthor'
 import { TimeAgo } from './TimeAgo'
 import { ReactionButtons } from './ReactionButtons'
 import { selectCurrentUsername } from '../auth/authSlice'
+import { useGetPostQuery } from '../api/apiSlice'
+import { Spinner } from '@/components/Spinner'
 
 const SinglePostPage = () => {
   const { postId } = useParams()
-
-  const post = useAppSelector((state) => selectPostById(state, postId!))
   const currentUsername = useAppSelector(selectCurrentUsername)
+  const { data: post, isFetching, isSuccess } = useGetPostQuery(postId!)
+
+  if (isFetching) {
+    return <Spinner text="Loading..." />
+  }
 
   if (!post) {
     return <PostNotFound />
+  }
+
+  if (!isSuccess) {
+    return <div>Something went wrong...</div>
   }
 
   const canEdit = currentUsername === post.user

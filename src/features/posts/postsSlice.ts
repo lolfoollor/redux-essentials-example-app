@@ -1,9 +1,16 @@
 import { RootState } from '@/app/store'
-import { createEntityAdapter, createSelector, createSlice, EntityState, PayloadAction } from '@reduxjs/toolkit'
+import {
+  createEntityAdapter,
+  createSelector,
+  createSlice,
+  EntityState,
+  PayloadAction,
+} from '@reduxjs/toolkit'
 import { AppStartListening } from '@/app/listenerMiddleware'
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
 import { logout } from '../auth/authSlice'
+import { apiSlice } from '../api/apiSlice'
 
 export interface Reactions {
   thumbsUp: number
@@ -40,13 +47,16 @@ export const fetchPosts = createAppAsyncThunk(
   },
 )
 
-type PostUpdate = Pick<Post, 'id' | 'title' | 'content' | 'date'>
-type NewPost = Pick<Post, 'title' | 'content' | 'user'>
+export type PostUpdate = Pick<Post, 'id' | 'title' | 'content' | 'date'>
+export type NewPost = Pick<Post, 'title' | 'content' | 'user'>
 
-export const addNewPost = createAppAsyncThunk('posts/addNewPost', async (initialPost: NewPost) => {
-  const response = await client.post<Post>('/fakeApi/posts', initialPost)
-  return response.data
-})
+export const addNewPost = createAppAsyncThunk(
+  'posts/addNewPost',
+  async (initialPost: NewPost) => {
+    const response = await client.post<Post>('/fakeApi/posts', initialPost)
+    return response.data
+  },
+)
 
 interface PostsState extends EntityState<Post, string> {
   status: 'idle' | 'pending' | 'succeeded' | 'rejected'
@@ -70,7 +80,10 @@ const postsSlice = createSlice({
       const { id, title, content, date } = action.payload
       postsAdapter.updateOne(state, { id, changes: { title, content, date } })
     },
-    reactionAdded(state, action: PayloadAction<{ postId: string; reaction: ReactionName }>) {
+    reactionAdded(
+      state,
+      action: PayloadAction<{ postId: string; reaction: ReactionName }>,
+    ) {
       const { postId, reaction } = action.payload
       const existingPost = state.entities[postId]
       if (existingPost) {
@@ -93,7 +106,9 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.status = 'rejected'
-        state.error = action.error.message ?? 'Sorry, something went wrong. Please try again later.'
+        state.error =
+          action.error.message ??
+          'Sorry, something went wrong. Please try again later.'
       })
       .addCase(addNewPost.fulfilled, postsAdapter.addOne)
   },
@@ -115,7 +130,7 @@ export default postsSlice.reducer
 
 export const addPostsListeners = (startAppListening: AppStartListening) => {
   startAppListening({
-    actionCreator: addNewPost.fulfilled,
+    matcher: apiSlice.endpoints.addNewPost.matchFulfilled,
     effect: async (action, listenerApi) => {
       const { toast } = await import('react-tiny-toast')
 

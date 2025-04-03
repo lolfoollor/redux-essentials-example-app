@@ -2,7 +2,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { useNavigate, useParams } from 'react-router-dom'
 import PostNotFound from './PostNotFound'
 import { FormEvent } from 'react'
-import { postUpdated, selectPostById } from './postsSlice'
+import { useEditPostMutation, useGetPostQuery } from '../api/apiSlice'
 
 interface EditPostFormFields extends HTMLFormControlsCollection {
   postTitle: HTMLInputElement
@@ -15,15 +15,15 @@ interface EditPostFormElements extends HTMLFormElement {
 
 const EditPostForm = () => {
   const { postId } = useParams()
-  const post = useAppSelector((state) => selectPostById(state, postId!))
-  const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { data: post } = useGetPostQuery(postId!)
+  const [updatePost, { isLoading }] = useEditPostMutation()
 
   if (!post) {
     return <PostNotFound />
   }
 
-  const onSavePostClicked = (e: FormEvent<EditPostFormElements>) => {
+  const onSavePostClicked = async (e: FormEvent<EditPostFormElements>) => {
     e.preventDefault()
 
     const { elements } = e.currentTarget
@@ -32,7 +32,7 @@ const EditPostForm = () => {
     const updatedDate = new Date().toISOString()
 
     if (title && content) {
-      dispatch(postUpdated({ id: post.id, title, content, date: updatedDate }))
+      await updatePost({ id: post.id, title, content, date: updatedDate })
       navigate(`/posts/${postId}`)
     }
   }
@@ -42,9 +42,20 @@ const EditPostForm = () => {
       <h2>Edit Post</h2>
       <form onSubmit={onSavePostClicked}>
         <label htmlFor="postTitle">Post Title:</label>
-        <input type="text" id="postTitle" name="postTitle" defaultValue={post.title} required />
+        <input
+          type="text"
+          id="postTitle"
+          name="postTitle"
+          defaultValue={post.title}
+          required
+        />
         <label htmlFor="postContent">Content:</label>
-        <textarea id="postContent" name="postContent" defaultValue={post.content} required />
+        <textarea
+          id="postContent"
+          name="postContent"
+          defaultValue={post.content}
+          required
+        />
 
         <button>Save Post</button>
       </form>

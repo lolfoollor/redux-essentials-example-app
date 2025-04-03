@@ -1,0 +1,5 @@
+export const BASE_API_URL = '/fakeApi'
+export const POST_API_URL = '/posts'
+export const USER_API_URL = '/users'
+export const REACTION_API_URL = '/reactions'
+export const NOTIFICATION_API_URL = '/notifications'

@@ -1,41 +1,51 @@
-import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import { fetchPosts, selectAllPosts, selectPostIds, selectPostsError, selectPostsStatus } from './postsSlice'
-import { useEffect, useMemo } from 'react'
 import { Spinner } from '@/components/Spinner'
 import PostExcerpt from './PostExcerpt'
-import { useSelector } from 'react-redux'
+import { useGetPostsQuery } from '@/features/api/apiSlice'
+import { useMemo } from 'react'
+import PostContainerCard from './PostContainerCard'
 
 const PostList = () => {
-  const dispatch = useAppDispatch()
-  const posts = useAppSelector(selectAllPosts)
-  const postStatus = useAppSelector(selectPostsStatus)
-  const postsError = useAppSelector(selectPostsError)
-  const orderedPostIds = useSelector(selectPostIds)
+  const {
+    data: posts = [],
+    isLoading,
+    isFetching,
+    isSuccess,
+    isError,
+    error,
+    refetch,
+  } = useGetPostsQuery()
 
-  useEffect(() => {
-    if (postStatus === 'idle') {
-      dispatch(fetchPosts())
-    }
-  }, [postStatus, dispatch])
+  const sortedPosts = useMemo(() => {
+    const sortedPosts = [...posts]
+    sortedPosts.sort((a, b) => b.date.localeCompare(a.date))
+    return sortedPosts
+  }, [posts])
 
-  if (postStatus === 'pending') {
+  if (isLoading) {
     return <Spinner text="Loading..." />
   }
 
-  if (postStatus === 'succeeded' && posts.length === 0) {
+  if (isSuccess && posts.length === 0) {
     return <div>No posts available.</div>
   }
 
-  if (postStatus === 'rejected') {
-    return <div>{postsError}</div>
+  if (isError) {
+    return <div>{error.toString()}</div>
   }
 
   const renderedPosts =
-    posts?.length !== 0 ? orderedPostIds.map((postId) => <PostExcerpt postId={postId} key={postId} />) : null
+    posts?.length !== 0 ? (
+      <PostContainerCard isFetching={isFetching}>
+        {sortedPosts.map((post) => (
+          <PostExcerpt post={post} key={post.id} />
+        ))}
+      </PostContainerCard>
+    ) : null
 
   return (
     <section className="posts-list">
       <h2>Posts</h2>
+      <button onClick={refetch}>Refetch Posts</button>
       {renderedPosts}
     </section>
   )

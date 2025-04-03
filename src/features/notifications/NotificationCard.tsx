@@ -1,14 +1,17 @@
-import { ClientNotification } from './notificationsSlice'
+import { NotificationMetadata, ServerNotification } from './notificationsSlice'
 import PostAuthor from '../posts/PostAuthor'
 import { TimeAgo } from '../posts/TimeAgo'
 import classNames from 'classnames'
 
 interface NotificationCardProps {
-  notification: ClientNotification
+  notification: ServerNotification
+  isNew: boolean
 }
 
-const NotificationCard = ({ notification }: NotificationCardProps) => {
-  const notificationClassName = classNames('notification', { new: notification.isNew })
+const NotificationCard = ({ notification, isNew }: NotificationCardProps) => {
+  const notificationClassName = classNames('notification', {
+    new: isNew,
+  })
 
   return (
     <div className={notificationClassName}>
